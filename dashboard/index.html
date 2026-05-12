@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fish Farm Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a4a6b;
+      color: #fff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
+    #last-updated { font-size: 0.75rem; opacity: 0.7; }
+
+    main {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .card .icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .card .value { font-size: 1.3rem; font-weight: 700; color: #1a4a6b; }
+    .card .label { font-size: 0.7rem; color: #718096; margin-top: 2px; }
+
+    /* ── SECTION HEADERS ── */
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4a5568;
+      margin: 20px 0 10px;
+    }
+
+    /* ── FEED INVENTORY ── */
+    .feed-table { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .feed-row {
+      padding: 12px 14px;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .feed-row:last-child { border-bottom: none; }
+    .feed-name { font-size: 0.9rem; font-weight: 500; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .feed-days { font-size: 0.75rem; color: #718096; }
+    .runway-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .runway-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .runway-fill.red    { background: #e53e3e; }
+    .runway-fill.amber  { background: #dd6b20; }
+    .runway-fill.green  { background: #38a169; }
+
+    /* ── POND TABLE ── */
+    .pond-table { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .pond-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      padding: 10px 14px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 0.8rem;
+      align-items: center;
+    }
+    .pond-row:last-child { border-bottom: none; }
+    .pond-row.header {
+      background: #f7fafc;
+      font-weight: 600;
+      font-size: 0.72rem;
+      color: #718096;
+      text-transform: uppercase;
+    }
+    .pond-name { font-weight: 600; }
+    .species { text-transform: capitalize; color: #4a5568; }
+
+    /* ── ALERTS ── */
+    .alerts-list { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .alert-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 0.82rem;
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-time { font-size: 0.7rem; color: #a0aec0; margin-top: 3px; }
+    .no-data { padding: 16px 14px; font-size: 0.85rem; color: #a0aec0; text-align: center; }
+
+    /* ── LOADING ── */
+    .loading { opacity: 0.4; font-style: italic; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🐟 Fish Farm Dashboard</h1>
+    <span id="last-updated">Loading…</span>
+  </header>
+
+  <main>
+    <div class="cards">
+      <div class="card">
+        <div class="icon">🐠</div>
+        <div class="value" id="total-fish">—</div>
+        <div class="label">Total Fish</div>
+      </div>
+      <div class="card">
+        <div class="icon">🌾</div>
+        <div class="value" id="total-feed">—</div>
+        <div class="label">Feed (kg)</div>
+      </div>
+      <div class="card">
+        <div class="icon">🏊</div>
+        <div class="value" id="active-ponds">—</div>
+        <div class="label">Active Ponds</div>
+      </div>
+    </div>
+
+    <h2>Feed Inventory</h2>
+    <div class="feed-table" id="feed-table"><div class="no-data loading">Loading…</div></div>
+
+    <h2>Pond Status</h2>
+    <div class="pond-table" id="pond-table">
+      <div class="pond-row header">
+        <span>Pond</span><span>Species</span><span>Fish</span><span>Last Log</span>
+      </div>
+      <div class="no-data loading">Loading…</div>
+    </div>
+
+    <h2>Recent Alerts</h2>
+    <div class="alerts-list" id="alerts-list"><div class="no-data loading">Loading…</div></div>
+  </main>
+
+  <script>
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      const json = await res.json();
+      return json.data;
+    }
+
+    function fmtDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      if (dateStr === today) return 'Today';
+      if (dateStr === yesterday) return 'Yesterday';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    function runwayClass(days) {
+      if (days === null) return 'green';
+      if (days < 7)  return 'red';
+      if (days < 14) return 'amber';
+      return 'green';
+    }
+
+    function runwayWidth(days) {
+      if (days === null) return '100%';
+      return Math.min(100, (days / 30) * 100).toFixed(1) + '%';
+    }
+
+    async function refresh() {
+      try {
+        const [summary, feeds, ponds, alerts] = await Promise.all([
+          fetchJSON('/api/summary'),
+          fetchJSON('/api/feed'),
+          fetchJSON('/api/ponds'),
+          fetchJSON('/api/alerts'),
+        ]);
+
+        // Summary cards
+        document.getElementById('total-fish').textContent   = (summary.totalFish || 0).toLocaleString();
+        document.getElementById('total-feed').textContent   = parseFloat(summary.totalFeedKg || 0).toFixed(0);
+        document.getElementById('active-ponds').textContent = summary.activePonds || 0;
+
+        // Feed inventory
+        const feedEl = document.getElementById('feed-table');
+        if (!feeds || !feeds.length) {
+          feedEl.innerHTML = '<div class="no-data">No feed inventory data.</div>';
+        } else {
+          feedEl.innerHTML = feeds.map(f => {
+            const cls   = runwayClass(f.projectedDaysLeft);
+            const width = runwayWidth(f.projectedDaysLeft);
+            const days  = f.projectedDaysLeft !== null ? `${f.projectedDaysLeft} days remaining` : 'Usage unknown';
+            return `<div class="feed-row">
+              <div class="feed-name">
+                <span>${f.feed_type}</span>
+                <span>${parseFloat(f.quantity_kg).toFixed(1)}kg</span>
+              </div>
+              <div class="feed-days">${days}${f.avgDailyKg > 0 ? ` · ${f.avgDailyKg}kg/day avg` : ''}</div>
+              <div class="runway-bar"><div class="runway-fill ${cls}" style="width:${width}"></div></div>
+            </div>`;
+          }).join('');
+        }
+
+        // Pond table
+        const pondEl = document.getElementById('pond-table');
+        const rows = !ponds || !ponds.length ? '' : ponds.map(p => {
+          const batch    = (p.fish_batches || []).find(b => b.status === 'active');
+          const count    = batch ? batch.current_count.toLocaleString() : '—';
+          return `<div class="pond-row">
+            <span class="pond-name">${p.name}</span>
+            <span class="species">${p.species}</span>
+            <span>${count}</span>
+            <span>—</span>
+          </div>`;
+        }).join('');
+        pondEl.innerHTML = `<div class="pond-row header"><span>Pond</span><span>Species</span><span>Fish</span><span>Last Log</span></div>` +
+          (rows || '<div class="no-data">No active ponds.</div>');
+
+        // Alerts
+        const alertsEl = document.getElementById('alerts-list');
+        if (!alerts || !alerts.length) {
+          alertsEl.innerHTML = '<div class="no-data">No alerts.</div>';
+        } else {
+          alertsEl.innerHTML = alerts.slice(0, 10).map(a => {
+            const ts = new Date(a.sent_at).toLocaleString('en-GB', {
+              day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+            });
+            return `<div class="alert-item">
+              <div>${a.message}</div>
+              <div class="alert-time">${ts} UTC</div>
+            </div>`;
+          }).join('');
+        }
+
+        document.getElementById('last-updated').textContent =
+          'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+      } catch (err) {
+        console.error('Dashboard refresh error:', err);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
