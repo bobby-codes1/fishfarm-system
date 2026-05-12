@@ -9,6 +9,9 @@ const {
 } = require('./db/supabase');
 
 async function generateWeeklyReport() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return '📊 Weekly report unavailable — add ANTHROPIC_API_KEY to Railway Variables to enable it.';
+  }
   const client = new Anthropic();
   const [usageLogs, feeds, batches] = await Promise.all([
     getLast7DaysFeedUsage(),
