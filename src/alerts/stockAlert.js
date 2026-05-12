@@ -81,7 +81,7 @@ async function checkMortalitySpike(ownerPhone, today) {
   for (const log of logs) {
     if (!log.mortality_count || log.mortality_count === 0) continue;
 
-    const batch = await require('../db/supabase').getActiveBatchForPond(log.pond_id);
+    const batch = await getActiveBatchForPond(log.pond_id);
     if (!batch || batch.current_count === 0) continue;
 
     const pct = (log.mortality_count / (batch.current_count + log.mortality_count)) * 100;

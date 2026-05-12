@@ -1,6 +1,6 @@
 'use strict';
 
-const Anthropic = require('@anthropic-ai/sdk');
+const { Anthropic } = require('@anthropic-ai/sdk');
 const {
   getLast7DaysFeedUsage,
   getFeedInventory,
@@ -8,9 +8,8 @@ const {
   getLogsForPond,
 } = require('./db/supabase');
 
-const client = new Anthropic();
-
 async function generateWeeklyReport() {
+  const client = new Anthropic();
   const [usageLogs, feeds, batches] = await Promise.all([
     getLast7DaysFeedUsage(),
     getFeedInventory(),
