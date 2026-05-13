@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy – Fish Farm Project</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.7;
+      padding: 24px 16px 64px;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 40px 32px;
+    }
+
+    header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+
+    header .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f6b3c;
+      margin-bottom: 6px;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    header .updated {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    section {
+      margin-bottom: 36px;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f6b3c;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li {
+      font-size: 0.95rem;
+      color: #475569;
+      padding: 6px 0 6px 20px;
+      position: relative;
+    }
+
+    ul li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #0f6b3c;
+      font-weight: 700;
+    }
+
+    .card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 16px 20px;
+    }
+
+    .contact-link {
+      color: #0f6b3c;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .contact-link:hover { text-decoration: underline; }
+
+    footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">🐟 Fish Farm Project</div>
+      <h1>Privacy Policy</h1>
+      <div class="updated">Last updated: May 2026</div>
+    </header>
+
+    <section>
+      <h2>What Data We Collect</h2>
+      <p>We collect the following data from users of this system:</p>
+      <ul>
+        <li>WhatsApp phone numbers of farm workers and the farm owner</li>
+        <li>Daily feeding logs — pond name, feed type, and quantity (kg)</li>
+        <li>Fish count and mortality records per pond</li>
+        <li>Harvest records — weight, fish count, buyer, and sale price</li>
+        <li>Feed inventory levels and restocking information</li>
+      </ul>
+      <p style="margin-top:12px;">No personal names, addresses, payment card details, or other sensitive personal information are collected.</p>
+    </section>
+
+    <section>
+      <h2>How We Use It</h2>
+      <p>All data collected is used exclusively to operate the fish farm inventory management system:</p>
+      <ul>
+        <li>Processing WhatsApp commands from farm workers (feeding, mortality, harvest logs)</li>
+        <li>Sending automated alerts and daily reports to the farm owner via WhatsApp</li>
+        <li>Generating weekly AI-powered farm performance analysis</li>
+        <li>Displaying the farm dashboard with real-time stock and pond status</li>
+      </ul>
+      <p style="margin-top:12px;">We do not use your data for marketing, profiling, or any purpose beyond managing farm operations.</p>
+    </section>
+
+    <section>
+      <h2>Data Storage and Security</h2>
+      <div class="card">
+        <p>All farm data is stored in a secure, cloud-hosted PostgreSQL database provided by Supabase. Access is restricted to the server application using an encrypted service role key. The database is not publicly accessible.</p>
+        <p>Data is retained for as long as the farm system is in active use. You may request deletion of your data at any time by contacting us using the details below.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Third Party Services</h2>
+      <p>This system uses the following third-party services to function:</p>
+      <ul>
+        <li><strong>Supabase</strong> — database hosting and storage (<a class="contact-link" href="https://supabase.com/privacy" target="_blank" rel="noopener">supabase.com/privacy</a>)</li>
+        <li><strong>Meta WhatsApp Cloud API</strong> — message delivery to and from farm workers (<a class="contact-link" href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">facebook.com/privacy/policy</a>)</li>
+        <li><strong>Anthropic Claude API</strong> — generating weekly farm analysis reports (<a class="contact-link" href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">anthropic.com/privacy</a>)</li>
+        <li><strong>Railway</strong> — application hosting (<a class="contact-link" href="https://railway.app/legal/privacy" target="_blank" rel="noopener">railway.app/legal/privacy</a>)</li>
+      </ul>
+      <p style="margin-top:12px;">Farm operational data is shared with these services only to the extent required to deliver their function. No data is sold or shared with any other third party.</p>
+    </section>
+
+    <section>
+      <h2>Contact Us</h2>
+      <p>If you have any questions about this privacy policy, wish to request access to your data, or would like it deleted, please contact us:</p>
+      <p><a class="contact-link" href="mailto:info@yebistudios.com">info@yebistudios.com</a></p>
+    </section>
+
+    <footer>
+      &copy; 2026 Fish Farm Project. All rights reserved.
+    </footer>
+  </div>
+</body>
+</html>

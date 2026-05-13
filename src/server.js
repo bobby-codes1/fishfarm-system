@@ -42,6 +42,10 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dashboard', 'index.html'));
 });
 
+app.get('/privacy-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dashboard', 'privacy-policy.html'));
+});
+
 // ─── REST API ─────────────────────────────────────────────────────────────────
 
 app.use('/api', require('./api/routes'));
