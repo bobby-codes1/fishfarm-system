@@ -8,6 +8,7 @@ async function sendWhatsAppMessage(to, message) {
 
   let res;
   try {
+    console.log('[WhatsApp] Using token prefix:', process.env.WHATSAPP_TOKEN?.slice(0, 20));
     res = await fetch(url, {
       method: 'POST',
       headers: {
