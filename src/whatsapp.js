@@ -1,6 +1,6 @@
 'use strict';
 
-const GRAPH_API_VERSION = 'v19.0';
+const GRAPH_API_VERSION = 'v21.0';
 
 async function sendWhatsAppMessage(to, message) {
   const phoneId = process.env.WHATSAPP_PHONE_ID;
