@@ -193,6 +193,44 @@ async function getLogsFiltered({ pondId, from, to }) {
 
 // ─── HARVESTS ─────────────────────────────────────────────────────────────────
 
+async function insertPond(data) {
+  const { data: row, error } = await supabase
+    .from('ponds')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return row;
+}
+
+async function insertBatch(data) {
+  const { data: row, error } = await supabase
+    .from('fish_batches')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return row;
+}
+
+async function insertFeedInventory(data) {
+  const { data: row, error } = await supabase
+    .from('feed_inventory')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return row;
+}
+
+async function setFeedStock(feedTypeId, newQty) {
+  const { error } = await supabase
+    .from('feed_inventory')
+    .update({ quantity_kg: newQty, last_updated: new Date().toISOString() })
+    .eq('id', feedTypeId);
+  if (error) throw error;
+}
+
 async function insertHarvest(data) {
   const { data: row, error } = await supabase
     .from('harvests')
@@ -254,6 +292,10 @@ async function getDashboardSummary() {
 }
 
 module.exports = {
+  insertPond,
+  insertBatch,
+  insertFeedInventory,
+  setFeedStock,
   getActivePonds,
   getPondById,
   getPondByName,

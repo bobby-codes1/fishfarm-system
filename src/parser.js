@@ -44,6 +44,26 @@ function parseCommand(messageBody) {
     };
   }
 
+  if (cmd === 'addpond') {
+    // addpond [name] [species] [count]
+    if (tokens.length < 4) return { error: 'invalid_args', raw };
+    const species = tokens[2].toLowerCase();
+    const count   = parseInt(tokens[3], 10);
+    if (!['catfish', 'tilapia'].includes(species)) return { error: 'invalid_args', raw };
+    if (isNaN(count) || count <= 0) return { error: 'invalid_args', raw };
+    return { command: 'addpond', args: { name: tokens[1].toUpperCase(), species, count }, raw };
+  }
+
+  if (cmd === 'addfeed') {
+    // addfeed [type] [quantity_kg] [cost_per_kg]
+    if (tokens.length < 4) return { error: 'invalid_args', raw };
+    const quantityKg = parseFloat(tokens[2]);
+    const costPerKg  = parseFloat(tokens[3]);
+    if (isNaN(quantityKg) || quantityKg <= 0) return { error: 'invalid_args', raw };
+    if (isNaN(costPerKg)  || costPerKg  <= 0) return { error: 'invalid_args', raw };
+    return { command: 'addfeed', args: { feedType: tokens[1], quantityKg, costPerKg }, raw };
+  }
+
   if (cmd === 'stock' || cmd === 'inventory' || normalised === 'feed stock') {
     return { command: 'stock', args: {}, raw };
   }

@@ -12,6 +12,8 @@ const { handleHarvest }   = require('./handlers/harvest');
 const { handleStock }     = require('./handlers/stock');
 const { handlePonds }     = require('./handlers/ponds');
 const { handleCount }     = require('./handlers/count');
+const { handleAddPond }   = require('./handlers/addpond');
+const { handleAddFeed }   = require('./handlers/addfeed');
 const { startScheduler }  = require('./scheduler');
 
 const HELP_TEXT = `🐟 *Fish Farm Bot — Commands*
@@ -92,6 +94,16 @@ app.post('/webhook', async (req, res) => {
         case 'harvest':   reply = await handleHarvest(parsed.args, from);   break;
         case 'stock':     reply = await handleStock();                       break;
         case 'ponds':     reply = await handlePonds();                       break;
+        case 'addpond':
+        case 'addfeed':
+          if (from !== process.env.OWNER_PHONE) {
+            reply = 'This command is only available to the farm owner.';
+            break;
+          }
+          reply = parsed.command === 'addpond'
+            ? await handleAddPond(parsed.args)
+            : await handleAddFeed(parsed.args);
+          break;
         case 'help':      reply = HELP_TEXT;                                 break;
         default:          reply = "I didn't understand that. Send *help* to see available commands.";
       }
