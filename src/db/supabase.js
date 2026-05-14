@@ -253,6 +253,94 @@ async function getRevenueThisMonth() {
   return data.reduce((sum, r) => sum + parseFloat(r.total_revenue_ghs || 0), 0);
 }
 
+// ─── CHARTS & REPORTING ───────────────────────────────────────────────────────
+
+async function getFeedTrendData(days) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const { data, error } = await supabase
+    .from('daily_logs')
+    .select('log_date, feed_amount_kg, pond_id, ponds(name)')
+    .gte('log_date', since.toISOString().split('T')[0])
+    .order('log_date');
+  if (error) throw error;
+  return data;
+}
+
+async function getMortalityTrendData(days) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const { data, error } = await supabase
+    .from('daily_logs')
+    .select('log_date, mortality_count, pond_id')
+    .gte('log_date', since.toISOString().split('T')[0])
+    .order('log_date');
+  if (error) throw error;
+  return data;
+}
+
+async function getAllLogsLastNDays(days) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const { data, error } = await supabase
+    .from('daily_logs')
+    .select('log_date, feed_amount_kg, mortality_count, pond_id, ponds(name, species), feed_inventory(feed_type), logged_by, created_at')
+    .gte('log_date', since.toISOString().split('T')[0])
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+async function getHarvestsInRange(from, to) {
+  let query = supabase
+    .from('harvests')
+    .select('*, ponds(name, species)')
+    .order('harvest_date', { ascending: false });
+  if (from) query = query.gte('harvest_date', from);
+  if (to)   query = query.lte('harvest_date', to);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+async function getMonthlyHistory(month) {
+  const [year, mon] = month.split('-').map(Number);
+  const from = `${month}-01`;
+  const lastDay = new Date(year, mon, 0).getDate();
+  const to = `${month}-${String(lastDay).padStart(2, '0')}`;
+  const [logsRes, harvestsRes] = await Promise.all([
+    supabase.from('daily_logs')
+      .select('feed_amount_kg, mortality_count, log_date, pond_id, ponds(name)')
+      .gte('log_date', from).lte('log_date', to).order('log_date'),
+    supabase.from('harvests')
+      .select('*, ponds(name, species)')
+      .gte('harvest_date', from).lte('harvest_date', to),
+  ]);
+  if (logsRes.error) throw logsRes.error;
+  if (harvestsRes.error) throw harvestsRes.error;
+  return { logs: logsRes.data, harvests: harvestsRes.data, from, to };
+}
+
+async function insertWeeklyReport(data) {
+  const { data: row, error } = await supabase
+    .from('weekly_reports')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return row;
+}
+
+async function getWeeklyReports(limit = 12) {
+  const { data, error } = await supabase
+    .from('weekly_reports')
+    .select('*')
+    .order('report_date', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
 // ─── ALERTS ───────────────────────────────────────────────────────────────────
 
 async function insertAlert(alertType, message, sentTo) {
@@ -317,4 +405,11 @@ module.exports = {
   insertAlert,
   getRecentAlerts,
   getDashboardSummary,
+  getFeedTrendData,
+  getMortalityTrendData,
+  getAllLogsLastNDays,
+  getHarvestsInRange,
+  getMonthlyHistory,
+  insertWeeklyReport,
+  getWeeklyReports,
 };

@@ -4,8 +4,9 @@ const cron = require('node-cron');
 const { runStockAlerts }     = require('./alerts/stockAlert');
 const { generateWeeklyReport } = require('./ai');
 const { sendWhatsAppMessage }  = require('./whatsapp');
-const { insertAlert }          = require('./db/supabase');
 const {
+  insertAlert,
+  insertWeeklyReport,
   getLogsForDate,
   getActivePonds,
   getFeedInventory,
@@ -39,6 +40,14 @@ function startScheduler() {
       const report = await generateWeeklyReport();
       await sendWhatsAppMessage(process.env.OWNER_PHONE, report);
       await insertAlert('weekly_report', report, process.env.OWNER_PHONE);
+      try {
+        await insertWeeklyReport({
+          report_date: new Date().toISOString().split('T')[0],
+          report_text: report,
+        });
+      } catch (saveErr) {
+        console.error('[Scheduler] Failed to save weekly report to DB:', saveErr.message);
+      }
     } catch (err) {
       console.error('[Scheduler] Weekly report error:', err.message);
     }

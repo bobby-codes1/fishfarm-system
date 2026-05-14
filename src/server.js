@@ -48,6 +48,10 @@ app.get('/privacy-policy', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dashboard', 'privacy-policy.html'));
 });
 
+app.get('/history', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dashboard', 'history.html'));
+});
+
 // ─── REST API ─────────────────────────────────────────────────────────────────
 
 app.use('/api', require('./api/routes'));

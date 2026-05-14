@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fish Farm Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,24 +15,57 @@
       min-height: 100vh;
     }
 
+    /* ── NAV / HEADER ── */
     header {
       background: #1a4a6b;
       color: #fff;
-      padding: 16px 20px;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      padding: 12px 0 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
-    header h1 { font-size: 1.1rem; font-weight: 600; }
-    #last-updated { font-size: 0.75rem; opacity: 0.7; }
+    .brand { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+    nav a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 0.82rem;
+      margin-left: 16px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      transition: background 0.15s, color 0.15s;
+    }
+    nav a:hover, nav a.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .header-sub {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      font-size: 0.78rem;
+      opacity: 0.7;
+    }
 
+    /* ── LAYOUT ── */
     main {
-      max-width: 520px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 16px;
+    }
+
+    h2 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #4a5568;
+      margin: 24px 0 10px;
     }
 
     /* ── SUMMARY CARDS ── */
@@ -39,7 +73,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 4px;
     }
     .card {
       background: #fff;
@@ -48,44 +82,168 @@
       text-align: center;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
-    .card .icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .card .icon  { font-size: 1.4rem; margin-bottom: 4px; }
     .card .value { font-size: 1.3rem; font-weight: 700; color: #1a4a6b; }
     .card .label { font-size: 0.7rem; color: #718096; margin-top: 2px; }
 
-    /* ── SECTION HEADERS ── */
-    h2 {
-      font-size: 0.85rem;
+    /* ── CHARTS GRID ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .chart-card h3 {
+      font-size: 0.78rem;
       font-weight: 600;
+      color: #4a5568;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #4a5568;
-      margin: 20px 0 10px;
+      margin-bottom: 12px;
     }
+    .chart-card canvas { max-height: 220px; }
+
+    /* ── POND PERFORMANCE TABLE ── */
+    .perf-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .perf-table th { background: #f7fafc; color: #718096; font-size: 0.72rem; text-transform: uppercase; padding: 7px 8px; text-align: left; font-weight: 600; }
+    .perf-table td { padding: 8px 8px; border-top: 1px solid #edf2f7; }
+    .perf-table tr.no-log td { background: #fff5f5; color: #c53030; }
+    .perf-table tr.no-log td:first-child::before { content: '⚠ '; }
+
+    /* ── ACTIVITY LOG ── */
+    .activity-filters {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin-bottom: 10px;
+    }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .filter-row label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.72rem;
+      color: #718096;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      gap: 4px;
+    }
+    .filter-row input, .filter-row select {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+      color: #1a202c;
+      background: #fff;
+    }
+    .filter-row input:focus, .filter-row select:focus { outline: 2px solid #1a4a6b; }
+    .btn {
+      background: #1a4a6b;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #153d5a; }
+    .btn.secondary { background: #e2e8f0; color: #4a5568; }
+    .btn.secondary:hover { background: #cbd5e0; }
+
+    .activity-table-wrap {
+      background: #fff;
+      border-radius: 10px;
+      overflow: auto;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    table.activity-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .activity-table th {
+      background: #f7fafc;
+      color: #718096;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      padding: 9px 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .activity-table td { padding: 9px 12px; border-top: 1px solid #edf2f7; vertical-align: top; }
+    .activity-table tr:hover td { background: #f7fafc; }
+    .action-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .action-badge.Feed     { background: #ebf8ff; color: #2b6cb0; }
+    .action-badge.Mortality { background: #fff5f5; color: #c53030; }
+    .action-badge.Harvest  { background: #f0fff4; color: #276749; }
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 14px 0 4px;
+      font-size: 0.82rem;
+      color: #718096;
+    }
+
+    /* ── REPORTS SECTION ── */
+    .reports-section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .dl-btn {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #1a4a6b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .dl-btn:hover { background: #edf2f7; border-color: #cbd5e0; }
+    .dl-btn .icon { font-size: 1rem; }
 
     /* ── FEED INVENTORY ── */
     .feed-table { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .feed-row {
-      padding: 12px 14px;
-      border-bottom: 1px solid #edf2f7;
-    }
+    .feed-row { padding: 12px 14px; border-bottom: 1px solid #edf2f7; }
     .feed-row:last-child { border-bottom: none; }
     .feed-name { font-size: 0.9rem; font-weight: 500; margin-bottom: 4px; display: flex; justify-content: space-between; }
     .feed-days { font-size: 0.75rem; color: #718096; }
-    .runway-bar {
-      height: 6px;
-      border-radius: 3px;
-      background: #e2e8f0;
-      margin-top: 6px;
-      overflow: hidden;
-    }
-    .runway-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.4s ease;
-    }
-    .runway-fill.red    { background: #e53e3e; }
-    .runway-fill.amber  { background: #dd6b20; }
-    .runway-fill.green  { background: #38a169; }
+    .runway-bar { height: 6px; border-radius: 3px; background: #e2e8f0; margin-top: 6px; overflow: hidden; }
+    .runway-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+    .runway-fill.red   { background: #e53e3e; }
+    .runway-fill.amber { background: #dd6b20; }
+    .runway-fill.green { background: #38a169; }
 
     /* ── POND TABLE ── */
     .pond-table { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -98,175 +256,493 @@
       align-items: center;
     }
     .pond-row:last-child { border-bottom: none; }
-    .pond-row.header {
-      background: #f7fafc;
-      font-weight: 600;
-      font-size: 0.72rem;
-      color: #718096;
-      text-transform: uppercase;
-    }
+    .pond-row.header { background: #f7fafc; font-weight: 600; font-size: 0.72rem; color: #718096; text-transform: uppercase; }
     .pond-name { font-weight: 600; }
-    .species { text-transform: capitalize; color: #4a5568; }
+    .species   { text-transform: capitalize; color: #4a5568; }
 
     /* ── ALERTS ── */
     .alerts-list { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .alert-item {
-      padding: 12px 14px;
-      border-bottom: 1px solid #edf2f7;
-      font-size: 0.82rem;
-    }
+    .alert-item { padding: 12px 14px; border-bottom: 1px solid #edf2f7; font-size: 0.82rem; }
     .alert-item:last-child { border-bottom: none; }
     .alert-time { font-size: 0.7rem; color: #a0aec0; margin-top: 3px; }
     .no-data { padding: 16px 14px; font-size: 0.85rem; color: #a0aec0; text-align: center; }
-
-    /* ── LOADING ── */
     .loading { opacity: 0.4; font-style: italic; }
+
+    /* ── DIALOG ── */
+    dialog {
+      border: none;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      max-width: 340px;
+      width: 90vw;
+    }
+    dialog::backdrop { background: rgba(0,0,0,0.4); }
+    dialog h3 { font-size: 1rem; margin-bottom: 16px; color: #1a4a6b; }
+    dialog label { display: flex; flex-direction: column; font-size: 0.78rem; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; gap: 4px; margin-bottom: 12px; }
+    dialog input { border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 10px; font-size: 0.9rem; color: #1a202c; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🐟 Fish Farm Dashboard</h1>
+
+<header>
+  <div class="header-top">
+    <span class="brand">🐟 Fish Farm</span>
+    <nav>
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/history">History</a>
+      <a href="/history#reports">Reports</a>
+    </nav>
+  </div>
+  <div class="header-sub">
+    <span>Live Dashboard</span>
     <span id="last-updated">Loading…</span>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <div class="cards">
-      <div class="card">
-        <div class="icon">🐠</div>
-        <div class="value" id="total-fish">—</div>
-        <div class="label">Total Fish</div>
-      </div>
-      <div class="card">
-        <div class="icon">🌾</div>
-        <div class="value" id="total-feed">—</div>
-        <div class="label">Feed (kg)</div>
-      </div>
-      <div class="card">
-        <div class="icon">🏊</div>
-        <div class="value" id="active-ponds">—</div>
-        <div class="label">Active Ponds</div>
-      </div>
+<main>
+
+  <!-- SUMMARY CARDS -->
+  <div class="cards" style="margin-top:16px">
+    <div class="card"><div class="icon">🐠</div><div class="value" id="total-fish">—</div><div class="label">Total Fish</div></div>
+    <div class="card"><div class="icon">🌾</div><div class="value" id="total-feed">—</div><div class="label">Feed Stock (kg)</div></div>
+    <div class="card"><div class="icon">🏊</div><div class="value" id="active-ponds">—</div><div class="label">Active Ponds</div></div>
+  </div>
+
+  <!-- CHARTS -->
+  <h2>Analytics</h2>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Feed Consumption — Last 14 Days</h3>
+      <canvas id="feedChart"></canvas>
     </div>
-
-    <h2>Feed Inventory</h2>
-    <div class="feed-table" id="feed-table"><div class="no-data loading">Loading…</div></div>
-
-    <h2>Pond Status</h2>
-    <div class="pond-table" id="pond-table">
-      <div class="pond-row header">
-        <span>Pond</span><span>Species</span><span>Fish</span><span>Last Log</span>
-      </div>
-      <div class="no-data loading">Loading…</div>
+    <div class="chart-card">
+      <h3>Mortalities — Last 14 Days</h3>
+      <canvas id="mortalityChart"></canvas>
     </div>
+    <div class="chart-card">
+      <h3>Feed Inventory Status</h3>
+      <canvas id="feedGaugeChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Pond Performance — Last 7 Days</h3>
+      <div id="pond-perf-wrap"><div class="no-data loading">Loading…</div></div>
+    </div>
+  </div>
 
-    <h2>Recent Alerts</h2>
-    <div class="alerts-list" id="alerts-list"><div class="no-data loading">Loading…</div></div>
-  </main>
+  <!-- ACTIVITY LOG -->
+  <h2>Activity Log</h2>
+  <div class="activity-filters">
+    <div class="filter-row">
+      <label>From<input type="date" id="filter-from"></label>
+      <label>To<input type="date" id="filter-to"></label>
+      <label>Pond<select id="filter-pond"><option value="">All Ponds</option></select></label>
+      <label>Action
+        <select id="filter-action">
+          <option value="">All</option>
+          <option value="Feed">Feed</option>
+          <option value="Mortality">Mortality</option>
+          <option value="Harvest">Harvest</option>
+        </select>
+      </label>
+      <button class="btn" onclick="applyFilters()">Apply</button>
+    </div>
+  </div>
+  <div class="activity-table-wrap">
+    <table class="activity-table">
+      <thead>
+        <tr>
+          <th>Date &amp; Time</th>
+          <th>Worker</th>
+          <th>Pond</th>
+          <th>Action</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="activity-tbody"><tr><td colspan="5" class="no-data loading">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <button class="btn secondary" id="prev-page" onclick="changePage(-1)">← Previous</button>
+    <span id="page-info">—</span>
+    <button class="btn secondary" id="next-page" onclick="changePage(1)">Next →</button>
+  </div>
 
-  <script>
-    async function fetchJSON(url) {
-      const res = await fetch(url);
-      const json = await res.json();
-      return json.data;
+  <!-- REPORTS -->
+  <h2>Download Reports</h2>
+  <div class="reports-section">
+    <button class="dl-btn" onclick="openDlDialog('logs')"><span class="icon">📋</span> Download Logs CSV</button>
+    <button class="dl-btn" onclick="window.location.href='/api/export/inventory.csv'"><span class="icon">📦</span> Download Inventory CSV</button>
+    <button class="dl-btn" onclick="openDlDialog('pdf')"><span class="icon">📄</span> Download PDF Report</button>
+    <button class="dl-btn" onclick="openDlDialog('xlsx')"><span class="icon">📊</span> Download Excel Report</button>
+  </div>
+
+  <!-- FEED INVENTORY -->
+  <h2>Feed Inventory</h2>
+  <div class="feed-table" id="feed-table"><div class="no-data loading">Loading…</div></div>
+
+  <!-- POND STATUS -->
+  <h2>Pond Status</h2>
+  <div class="pond-table" id="pond-table">
+    <div class="pond-row header"><span>Pond</span><span>Species</span><span>Fish</span><span>Last Log</span></div>
+    <div class="no-data loading">Loading…</div>
+  </div>
+
+  <!-- ALERTS -->
+  <h2>Recent Alerts</h2>
+  <div class="alerts-list" id="alerts-list"><div class="no-data loading">Loading…</div></div>
+
+</main>
+
+<!-- Download date-range dialog -->
+<dialog id="dl-dialog">
+  <h3 id="dl-dialog-title">Select Date Range</h3>
+  <label>From<input type="date" id="dl-from"></label>
+  <label>To<input type="date" id="dl-to"></label>
+  <div class="dialog-actions">
+    <button class="btn secondary" onclick="document.getElementById('dl-dialog').close()">Cancel</button>
+    <button class="btn" onclick="confirmDownload()">Download</button>
+  </div>
+</dialog>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+const PAGE_SIZE  = 20;
+const CHART_COLORS = ['#3182ce','#38a169','#dd6b20','#9f7aea','#e53e3e','#d69e2e','#0bc5ea','#f6ad55'];
+
+// ── State ────────────────────────────────────────────────────────────────────
+let activityAll  = [];
+let activityPage = 1;
+let dlType       = null;
+let feedChart, mortalityChart, feedGaugeChart;
+let feedsCache   = [];
+
+// ── Utility ──────────────────────────────────────────────────────────────────
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  const j = await r.json();
+  return j.data;
+}
+
+function fmtDMY(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function fmtDateTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' })
+    + ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', timeZone:'UTC' }) + ' UTC';
+}
+
+function workerLabel(phone) {
+  if (!phone || phone === '—') return '—';
+  const c = String(phone).replace(/\D/g, '');
+  return c.length >= 4 ? `Worker ...${c.slice(-4)}` : phone;
+}
+
+function runwayClass(d) { return d === null ? 'green' : d < 7 ? 'red' : d < 14 ? 'amber' : 'green'; }
+function runwayWidth(d) { return d === null ? '100%' : Math.min(100, (d / 30) * 100).toFixed(1) + '%'; }
+
+function todayStr()    { return new Date().toISOString().split('T')[0]; }
+function fmtRelDate(s) {
+  if (!s) return '—';
+  const t = todayStr(), y = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  if (s === t) return 'Today'; if (s === y) return 'Yesterday';
+  return new Date(s).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+}
+
+// ── Init filter defaults ──────────────────────────────────────────────────────
+(function initFilters() {
+  const today = todayStr();
+  document.getElementById('filter-from').value = today;
+  document.getElementById('filter-to').value   = today;
+})();
+
+// ── Populate pond dropdown ────────────────────────────────────────────────────
+async function populatePondFilter() {
+  try {
+    const ponds = await fetchJSON('/api/ponds');
+    const sel = document.getElementById('filter-pond');
+    (ponds || []).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  } catch(e) { /* non-critical */ }
+}
+
+// ── SUMMARY ──────────────────────────────────────────────────────────────────
+async function refreshSummary() {
+  const summary = await fetchJSON('/api/summary');
+  document.getElementById('total-fish').textContent   = (summary.totalFish || 0).toLocaleString();
+  document.getElementById('total-feed').textContent   = parseFloat(summary.totalFeedKg || 0).toFixed(0);
+  document.getElementById('active-ponds').textContent = summary.activePonds || 0;
+}
+
+// ── FEED TABLE ───────────────────────────────────────────────────────────────
+async function refreshFeed() {
+  const feeds = await fetchJSON('/api/feed');
+  feedsCache = feeds || [];
+
+  const el = document.getElementById('feed-table');
+  if (!feeds || !feeds.length) { el.innerHTML = '<div class="no-data">No feed inventory data.</div>'; return; }
+
+  el.innerHTML = feeds.map(f => {
+    const cls   = runwayClass(f.projectedDaysLeft);
+    const width = runwayWidth(f.projectedDaysLeft);
+    const days  = f.projectedDaysLeft !== null ? `${f.projectedDaysLeft} days remaining` : 'Usage unknown';
+    return `<div class="feed-row">
+      <div class="feed-name"><span>${f.feed_type}</span><span>${parseFloat(f.quantity_kg).toFixed(1)}kg</span></div>
+      <div class="feed-days">${days}${f.avgDailyKg > 0 ? ` · ${f.avgDailyKg}kg/day avg` : ''}</div>
+      <div class="runway-bar"><div class="runway-fill ${cls}" style="width:${width}"></div></div>
+    </div>`;
+  }).join('');
+
+  renderFeedGauge(feeds);
+}
+
+// ── POND TABLE ───────────────────────────────────────────────────────────────
+async function refreshPonds() {
+  const ponds = await fetchJSON('/api/ponds');
+  const el = document.getElementById('pond-table');
+  const rows = !ponds || !ponds.length ? '' : ponds.map(p => {
+    const batch = (p.fish_batches || []).find(b => b.status === 'active');
+    const count = batch ? batch.current_count.toLocaleString() : '—';
+    return `<div class="pond-row"><span class="pond-name">${p.name}</span><span class="species">${p.species}</span><span>${count}</span><span>—</span></div>`;
+  }).join('');
+  el.innerHTML = `<div class="pond-row header"><span>Pond</span><span>Species</span><span>Fish</span><span>Last Log</span></div>`
+    + (rows || '<div class="no-data">No active ponds.</div>');
+}
+
+// ── ALERTS ───────────────────────────────────────────────────────────────────
+async function refreshAlerts() {
+  const alerts = await fetchJSON('/api/alerts');
+  const el = document.getElementById('alerts-list');
+  if (!alerts || !alerts.length) { el.innerHTML = '<div class="no-data">No alerts.</div>'; return; }
+  el.innerHTML = alerts.slice(0, 10).map(a => {
+    const ts = new Date(a.sent_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'UTC' });
+    return `<div class="alert-item"><div>${a.message}</div><div class="alert-time">${ts} UTC</div></div>`;
+  }).join('');
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+function shortDate(d) {
+  const [,m,day] = d.split('-');
+  return `${parseInt(day)} ${['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)]}`;
+}
+
+async function refreshCharts() {
+  const [feedTrend, mortTrend, pondPerf] = await Promise.all([
+    fetchJSON('/api/charts/feed-trend'),
+    fetchJSON('/api/charts/mortality-trend'),
+    fetchJSON('/api/charts/pond-performance'),
+  ]);
+
+  // Feed trend line chart
+  const feedLabels = (feedTrend.dates || []).map(shortDate);
+  const feedDatasets = Object.entries(feedTrend.ponds || {}).map(([name, vals], i) => ({
+    label: name, data: vals,
+    borderColor: CHART_COLORS[i % CHART_COLORS.length],
+    backgroundColor: 'transparent',
+    tension: 0.3, pointRadius: 3,
+  }));
+  const feedCtx = document.getElementById('feedChart').getContext('2d');
+  if (feedChart) feedChart.destroy();
+  feedChart = new Chart(feedCtx, {
+    type: 'line',
+    data: { labels: feedLabels, datasets: feedDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'kg fed', font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } },
+    },
+  });
+
+  // Mortality bar chart
+  const mortLabels = (mortTrend.dates || []).map(shortDate);
+  const mortColors = (mortTrend.totals || []).map((_, i) =>
+    (mortTrend.exceeded_threshold || [])[i] ? '#e53e3e' : '#fc8181');
+  const mortCtx = document.getElementById('mortalityChart').getContext('2d');
+  if (mortalityChart) mortalityChart.destroy();
+  mortalityChart = new Chart(mortCtx, {
+    type: 'bar',
+    data: { labels: mortLabels, datasets: [{ label: 'Deaths', data: mortTrend.totals || [], backgroundColor: mortColors }] },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'deaths', font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } },
+    },
+  });
+
+  // Pond performance table
+  renderPondPerfTable(pondPerf || []);
+}
+
+function renderFeedGauge(feeds) {
+  if (!feeds || !feeds.length) return;
+  const labels = feeds.map(f => f.feed_type);
+  const stocks = feeds.map(f => parseFloat(f.quantity_kg));
+  const thresholds = feeds.map(f => parseFloat(f.reorder_threshold_kg));
+  const colors = feeds.map(f => {
+    const d = f.projectedDaysLeft;
+    return d === null || d > 14 ? '#38a169' : d >= 7 ? '#dd6b20' : '#e53e3e';
+  });
+  const gaugeCtx = document.getElementById('feedGaugeChart').getContext('2d');
+  if (feedGaugeChart) feedGaugeChart.destroy();
+  feedGaugeChart = new Chart(gaugeCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Current Stock (kg)', data: stocks, backgroundColor: colors, borderRadius: 4 },
+        { label: 'Reorder Threshold (kg)', data: thresholds, backgroundColor: 'rgba(160,174,192,0.35)', borderColor: '#a0aec0', borderWidth: 1, borderRadius: 4 },
+      ],
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+      scales: { x: { beginAtZero: true, title: { display: true, text: 'kg', font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } },
+    },
+  });
+}
+
+function renderPondPerfTable(data) {
+  const wrap = document.getElementById('pond-perf-wrap');
+  if (!data.length) { wrap.innerHTML = '<div class="no-data">No active ponds.</div>'; return; }
+  wrap.innerHTML = `<table class="perf-table">
+    <thead><tr><th>Pond</th><th>Species</th><th>Fish</th><th>Fed 7d</th><th>Deaths 7d</th><th>Last Log</th></tr></thead>
+    <tbody>
+      ${data.map(p => `<tr class="${p.noRecentLog ? 'no-log' : ''}">
+        <td><strong>${p.pond}</strong></td>
+        <td style="text-transform:capitalize">${p.species}</td>
+        <td>${(p.currentCount||0).toLocaleString()}</td>
+        <td>${parseFloat(p.totalFed7d||0).toFixed(1)}kg</td>
+        <td>${p.mortalityCount7d||0} <span style="color:#a0aec0;font-size:0.72rem">(${parseFloat(p.mortalityRate7d||0).toFixed(2)}%)</span></td>
+        <td>${p.daysSinceLastLog === 999 ? '>30d ago' : p.daysSinceLastLog === 0 ? 'Today' : `${p.daysSinceLastLog}d ago`}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ── ACTIVITY LOG ─────────────────────────────────────────────────────────────
+async function refreshActivityLog() {
+  const from   = document.getElementById('filter-from').value;
+  const to     = document.getElementById('filter-to').value;
+  const pondId = document.getElementById('filter-pond').value;
+
+  const params = new URLSearchParams();
+  if (from)   params.set('from', from);
+  if (to)     params.set('to', to);
+  if (pondId) params.set('pond', pondId);
+
+  const [logs, harvests] = await Promise.all([
+    fetchJSON(`/api/logs?${params}`),
+    fetchJSON(`/api/history/harvests?from=${from || ''}&to=${to || ''}`),
+  ]);
+
+  activityAll = mergeActivity(logs || [], harvests || []);
+  activityPage = 1;
+  renderActivityTable();
+}
+
+function mergeActivity(logs, harvests) {
+  const rows = [];
+  for (const log of logs) {
+    if (parseFloat(log.feed_amount_kg) > 0) {
+      rows.push({ dt: log.created_at, date: log.log_date, worker: log.logged_by, pond: log.ponds?.name || '—', action: 'Feed', details: `${log.feed_amount_kg}kg ${log.feed_inventory?.feed_type || ''}`.trim() });
     }
-
-    function fmtDate(dateStr) {
-      if (!dateStr) return '—';
-      const d = new Date(dateStr);
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      if (dateStr === today) return 'Today';
-      if (dateStr === yesterday) return 'Yesterday';
-      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    if ((log.mortality_count || 0) > 0) {
+      rows.push({ dt: log.created_at, date: log.log_date, worker: log.logged_by, pond: log.ponds?.name || '—', action: 'Mortality', details: `${log.mortality_count} deaths` });
     }
+  }
+  for (const h of harvests) {
+    rows.push({ dt: h.created_at, date: h.harvest_date, worker: null, pond: h.ponds?.name || '—', action: 'Harvest', details: `${h.total_weight_kg}kg, ${h.fish_count} fish → GHS ${parseFloat(h.total_revenue_ghs||0).toLocaleString()}` });
+  }
+  rows.sort((a, b) => new Date(b.dt || b.date) - new Date(a.dt || a.date));
+  return rows;
+}
 
-    function runwayClass(days) {
-      if (days === null) return 'green';
-      if (days < 7)  return 'red';
-      if (days < 14) return 'amber';
-      return 'green';
-    }
+function renderActivityTable() {
+  const action = document.getElementById('filter-action').value;
+  const filtered = action ? activityAll.filter(r => r.action === action) : activityAll;
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const start = (activityPage - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
 
-    function runwayWidth(days) {
-      if (days === null) return '100%';
-      return Math.min(100, (days / 30) * 100).toFixed(1) + '%';
-    }
+  const tbody = document.getElementById('activity-tbody');
+  if (!page.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="no-data">No activity for this period.</td></tr>`;
+  } else {
+    tbody.innerHTML = page.map(r => `
+      <tr>
+        <td style="white-space:nowrap;font-size:0.78rem">${fmtDateTime(r.dt || r.date)}</td>
+        <td style="font-size:0.78rem;color:#718096">${workerLabel(r.worker)}</td>
+        <td><strong>${r.pond}</strong></td>
+        <td><span class="action-badge ${r.action}">${r.action}</span></td>
+        <td style="font-size:0.8rem">${r.details}</td>
+      </tr>`).join('');
+  }
 
-    async function refresh() {
-      try {
-        const [summary, feeds, ponds, alerts] = await Promise.all([
-          fetchJSON('/api/summary'),
-          fetchJSON('/api/feed'),
-          fetchJSON('/api/ponds'),
-          fetchJSON('/api/alerts'),
-        ]);
+  document.getElementById('page-info').textContent = `Page ${activityPage} of ${pages} (${total} records)`;
+  document.getElementById('prev-page').disabled = activityPage <= 1;
+  document.getElementById('next-page').disabled = activityPage >= pages;
+}
 
-        // Summary cards
-        document.getElementById('total-fish').textContent   = (summary.totalFish || 0).toLocaleString();
-        document.getElementById('total-feed').textContent   = parseFloat(summary.totalFeedKg || 0).toFixed(0);
-        document.getElementById('active-ponds').textContent = summary.activePonds || 0;
+function applyFilters() { activityPage = 1; refreshActivityLog(); }
+function changePage(dir) {
+  const action = document.getElementById('filter-action').value;
+  const filtered = action ? activityAll.filter(r => r.action === action) : activityAll;
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  activityPage = Math.min(Math.max(1, activityPage + dir), pages);
+  renderActivityTable();
+}
 
-        // Feed inventory
-        const feedEl = document.getElementById('feed-table');
-        if (!feeds || !feeds.length) {
-          feedEl.innerHTML = '<div class="no-data">No feed inventory data.</div>';
-        } else {
-          feedEl.innerHTML = feeds.map(f => {
-            const cls   = runwayClass(f.projectedDaysLeft);
-            const width = runwayWidth(f.projectedDaysLeft);
-            const days  = f.projectedDaysLeft !== null ? `${f.projectedDaysLeft} days remaining` : 'Usage unknown';
-            return `<div class="feed-row">
-              <div class="feed-name">
-                <span>${f.feed_type}</span>
-                <span>${parseFloat(f.quantity_kg).toFixed(1)}kg</span>
-              </div>
-              <div class="feed-days">${days}${f.avgDailyKg > 0 ? ` · ${f.avgDailyKg}kg/day avg` : ''}</div>
-              <div class="runway-bar"><div class="runway-fill ${cls}" style="width:${width}"></div></div>
-            </div>`;
-          }).join('');
-        }
+// ── DOWNLOAD DIALOG ───────────────────────────────────────────────────────────
+function openDlDialog(type) {
+  dlType = type;
+  const today    = todayStr();
+  const thirtyAgo = new Date(Date.now() - 30*86400000).toISOString().split('T')[0];
+  document.getElementById('dl-from').value = thirtyAgo;
+  document.getElementById('dl-to').value   = today;
+  const titles = { logs: 'Download Logs CSV', pdf: 'Download PDF Report', xlsx: 'Download Excel Report' };
+  document.getElementById('dl-dialog-title').textContent = titles[type] || 'Download';
+  document.getElementById('dl-dialog').showModal();
+}
+function confirmDownload() {
+  const from = document.getElementById('dl-from').value;
+  const to   = document.getElementById('dl-to').value;
+  const urls = { logs: `/api/export/logs.csv?from=${from}&to=${to}`, pdf: `/api/export/report.pdf?from=${from}&to=${to}`, xlsx: `/api/export/report.xlsx?from=${from}&to=${to}` };
+  if (urls[dlType]) window.location.href = urls[dlType];
+  document.getElementById('dl-dialog').close();
+}
 
-        // Pond table
-        const pondEl = document.getElementById('pond-table');
-        const rows = !ponds || !ponds.length ? '' : ponds.map(p => {
-          const batch    = (p.fish_batches || []).find(b => b.status === 'active');
-          const count    = batch ? batch.current_count.toLocaleString() : '—';
-          return `<div class="pond-row">
-            <span class="pond-name">${p.name}</span>
-            <span class="species">${p.species}</span>
-            <span>${count}</span>
-            <span>—</span>
-          </div>`;
-        }).join('');
-        pondEl.innerHTML = `<div class="pond-row header"><span>Pond</span><span>Species</span><span>Fish</span><span>Last Log</span></div>` +
-          (rows || '<div class="no-data">No active ponds.</div>');
+// ── FULL REFRESH ──────────────────────────────────────────────────────────────
+async function refresh() {
+  try {
+    await Promise.all([
+      refreshSummary(),
+      refreshFeed(),
+      refreshPonds(),
+      refreshAlerts(),
+      refreshCharts(),
+      refreshActivityLog(),
+    ]);
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  } catch(err) {
+    console.error('Dashboard refresh error:', err);
+  }
+}
 
-        // Alerts
-        const alertsEl = document.getElementById('alerts-list');
-        if (!alerts || !alerts.length) {
-          alertsEl.innerHTML = '<div class="no-data">No alerts.</div>';
-        } else {
-          alertsEl.innerHTML = alerts.slice(0, 10).map(a => {
-            const ts = new Date(a.sent_at).toLocaleString('en-GB', {
-              day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
-            });
-            return `<div class="alert-item">
-              <div>${a.message}</div>
-              <div class="alert-time">${ts} UTC</div>
-            </div>`;
-          }).join('');
-        }
-
-        document.getElementById('last-updated').textContent =
-          'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-      } catch (err) {
-        console.error('Dashboard refresh error:', err);
-      }
-    }
-
-    refresh();
-    setInterval(refresh, 5 * 60 * 1000);
-  </script>
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+populatePondFilter();
+refresh();
+setInterval(refresh, 5 * 60 * 1000);
+</script>
 </body>
 </html>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fish Farm — History &amp; Reports</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    /* ── NAV / HEADER ── */
+    header {
+      background: #1a4a6b;
+      color: #fff;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .brand { font-size: 1.05rem; font-weight: 700; }
+    nav a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 0.82rem;
+      margin-left: 16px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      transition: background 0.15s, color 0.15s;
+    }
+    nav a:hover, nav a.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .header-sub {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      font-size: 0.78rem;
+      opacity: 0.7;
+    }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+    h2 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #4a5568;
+      margin: 24px 0 10px;
+    }
+
+    /* ── MONTH SELECTOR ── */
+    .month-bar {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .month-bar label { font-size: 0.78rem; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .month-bar select {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 0.9rem;
+      color: #1a202c;
+      background: #fff;
+    }
+    .month-bar select:focus { outline: 2px solid #1a4a6b; }
+
+    /* ── SUMMARY CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 700px) { .cards { grid-template-columns: repeat(2,1fr); } }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .card .icon  { font-size: 1.4rem; margin-bottom: 4px; }
+    .card .value { font-size: 1.25rem; font-weight: 700; color: #1a4a6b; }
+    .card .label { font-size: 0.7rem; color: #718096; margin-top: 2px; }
+
+    /* ── CHARTS GRID ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .chart-card h3 {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .chart-card canvas { max-height: 240px; }
+
+    /* ── HARVEST TABLE ── */
+    .harvest-table-wrap {
+      background: #fff;
+      border-radius: 10px;
+      overflow: auto;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    table.harvest-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .harvest-table th {
+      background: #f7fafc;
+      color: #718096;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      padding: 9px 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .harvest-table td { padding: 9px 12px; border-top: 1px solid #edf2f7; }
+    .harvest-table tr:hover td { background: #f7fafc; }
+
+    /* ── WEEKLY REPORTS ── */
+    .reports-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .report-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .report-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .report-header:hover { background: #f7fafc; }
+    .report-date { font-weight: 700; font-size: 0.9rem; color: #1a4a6b; }
+    .report-toggle { font-size: 0.8rem; color: #a0aec0; }
+    .report-body {
+      display: none;
+      padding: 0 16px 16px;
+      font-size: 0.83rem;
+      line-height: 1.6;
+      color: #2d3748;
+      white-space: pre-wrap;
+      border-top: 1px solid #edf2f7;
+    }
+    .report-body.open { display: block; }
+
+    .no-data { padding: 20px; font-size: 0.85rem; color: #a0aec0; text-align: center; }
+    .loading { opacity: 0.4; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span class="brand">🐟 Fish Farm</span>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/history" class="active">History</a>
+      <a href="/history#reports" class="active">Reports</a>
+    </nav>
+  </div>
+  <div class="header-sub">
+    <span>History &amp; Reports</span>
+    <span id="last-updated">—</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- MONTH SELECTOR -->
+  <div class="month-bar">
+    <label for="month-select">Month</label>
+    <select id="month-select" onchange="loadMonth()"></select>
+  </div>
+
+  <!-- MONTHLY SUMMARY CARDS -->
+  <h2>Monthly Summary</h2>
+  <div class="cards">
+    <div class="card"><div class="icon">🌾</div><div class="value" id="m-feed">—</div><div class="label">Feed Used (kg)</div></div>
+    <div class="card"><div class="icon">💀</div><div class="value" id="m-mort">—</div><div class="label">Mortality</div></div>
+    <div class="card"><div class="icon">🐟</div><div class="value" id="m-harvests">—</div><div class="label">Harvests</div></div>
+    <div class="card"><div class="icon">💰</div><div class="value" id="m-revenue">—</div><div class="label">Revenue (GHS)</div></div>
+  </div>
+
+  <!-- MONTHLY CHARTS -->
+  <h2>Monthly Trends</h2>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Feed Consumption</h3>
+      <canvas id="mFeedChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Daily Mortalities</h3>
+      <canvas id="mMortChart"></canvas>
+    </div>
+  </div>
+
+  <!-- HARVEST HISTORY -->
+  <h2>Harvest History</h2>
+  <div class="harvest-table-wrap">
+    <table class="harvest-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Pond</th>
+          <th>Weight (kg)</th>
+          <th>Fish Count</th>
+          <th>Buyer</th>
+          <th>Price/kg (GHS)</th>
+          <th>Revenue (GHS)</th>
+        </tr>
+      </thead>
+      <tbody id="harvest-tbody"><tr><td colspan="7" class="no-data loading">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- WEEKLY REPORTS -->
+  <section id="reports">
+    <h2>Weekly AI Reports</h2>
+    <div class="reports-list" id="reports-list"><div class="no-data loading">Loading…</div></div>
+  </section>
+
+</main>
+
+<script>
+const CHART_COLORS = ['#3182ce','#38a169','#dd6b20','#9f7aea','#e53e3e','#d69e2e','#0bc5ea','#f6ad55'];
+
+let mFeedChart, mMortChart;
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  const j = await r.json();
+  return j.data;
+}
+
+function fmtDMY(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── Build month selector ──────────────────────────────────────────────────────
+(function buildMonthSelector() {
+  const sel = document.getElementById('month-select');
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = d.toISOString().slice(0, 7);
+    const lbl = d.toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = lbl;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+})();
+
+// ── Load month data ───────────────────────────────────────────────────────────
+async function loadMonth() {
+  const month = document.getElementById('month-select').value;
+
+  try {
+    const d = await fetchJSON(`/api/history/monthly?month=${month}`);
+
+    // Summary cards
+    document.getElementById('m-feed').textContent     = parseFloat(d.totalFeedKg || 0).toFixed(0);
+    document.getElementById('m-mort').textContent     = d.totalMortality || 0;
+    document.getElementById('m-harvests').textContent = d.harvestCount || 0;
+    document.getElementById('m-revenue').textContent  = parseFloat(d.harvestRevenue || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 });
+
+    // Build daily dates for the month
+    const [y, m2] = month.split('-').map(Number);
+    const daysInMonth = new Date(y, m2, 0).getDate();
+    const dates = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      dates.push(`${month}-${String(i).padStart(2, '0')}`);
+    }
+    const shortLabels = dates.map(dt => { const [,,day] = dt.split('-'); return parseInt(day); });
+
+    // Feed chart (per-pond lines)
+    const feedDatasets = Object.entries(d.feedByPond || {}).map(([name, dayMap], i) => ({
+      label: name,
+      data: dates.map(dt => parseFloat((dayMap[dt] || 0).toFixed(2))),
+      borderColor: CHART_COLORS[i % CHART_COLORS.length],
+      backgroundColor: 'transparent',
+      tension: 0.3, pointRadius: 2,
+    }));
+    const feedCtx = document.getElementById('mFeedChart').getContext('2d');
+    if (mFeedChart) mFeedChart.destroy();
+    mFeedChart = new Chart(feedCtx, {
+      type: 'line',
+      data: { labels: shortLabels, datasets: feedDatasets },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'kg', font: { size: 10 } } } },
+      },
+    });
+
+    // Mortality chart (daily bar)
+    const mortData = dates.map(dt => d.mortalityByDay?.[dt] || 0);
+    const mortCtx = document.getElementById('mMortChart').getContext('2d');
+    if (mMortChart) mMortChart.destroy();
+    mMortChart = new Chart(mortCtx, {
+      type: 'bar',
+      data: {
+        labels: shortLabels,
+        datasets: [{ label: 'Deaths', data: mortData, backgroundColor: '#fc8181', borderRadius: 3 }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'deaths', font: { size: 10 } } } },
+      },
+    });
+
+    // Harvest table
+    renderHarvestTable(d.harvests || []);
+
+    document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  } catch (err) {
+    console.error('Monthly data error:', err);
+  }
+}
+
+function renderHarvestTable(harvests) {
+  const tbody = document.getElementById('harvest-tbody');
+  if (!harvests.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="no-data">No harvests recorded this month.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = harvests.map(h => `
+    <tr>
+      <td>${fmtDMY(h.harvest_date)}</td>
+      <td><strong>${h.ponds?.name || '—'}</strong></td>
+      <td>${parseFloat(h.total_weight_kg).toFixed(1)}</td>
+      <td>${(h.fish_count || 0).toLocaleString()}</td>
+      <td>${h.buyer || '—'}</td>
+      <td>${h.price_per_kg_ghs ? parseFloat(h.price_per_kg_ghs).toFixed(2) : '—'}</td>
+      <td><strong>GHS ${parseFloat(h.total_revenue_ghs || 0).toLocaleString('en-GH', { minimumFractionDigits: 2 })}</strong></td>
+    </tr>`).join('');
+}
+
+// ── Weekly reports ────────────────────────────────────────────────────────────
+async function loadWeeklyReports() {
+  try {
+    const reports = await fetchJSON('/api/reports/weekly');
+    const el = document.getElementById('reports-list');
+
+    if (!reports || !reports.length) {
+      el.innerHTML = '<div class="no-data">No weekly reports generated yet. Reports appear here every Sunday at 8pm UTC once ANTHROPIC_API_KEY is configured.</div>';
+      return;
+    }
+
+    el.innerHTML = reports.map((r, i) => {
+      const date = fmtDMY(r.report_date);
+      const id   = `report-${i}`;
+      return `<div class="report-card">
+        <div class="report-header" onclick="toggleReport('${id}')">
+          <span class="report-date">📊 Week of ${date}</span>
+          <span class="report-toggle" id="${id}-toggle">▼ Expand</span>
+        </div>
+        <div class="report-body" id="${id}">${escapeHtml(r.report_text)}</div>
+      </div>`;
+    }).join('');
+
+  } catch (err) {
+    document.getElementById('reports-list').innerHTML = '<div class="no-data">Could not load weekly reports.</div>';
+  }
+}
+
+function toggleReport(id) {
+  const body   = document.getElementById(id);
+  const toggle = document.getElementById(`${id}-toggle`);
+  const open   = body.classList.toggle('open');
+  toggle.textContent = open ? '▲ Collapse' : '▼ Expand';
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Handle #reports hash ──────────────────────────────────────────────────────
+if (window.location.hash === '#reports') {
+  window.addEventListener('load', () => {
+    document.getElementById('reports')?.scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+loadMonth();
+loadWeeklyReports();
+</script>
+</body>
+</html>
