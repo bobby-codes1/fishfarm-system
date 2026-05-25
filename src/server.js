@@ -5,6 +5,8 @@ require('dotenv').config();
 const express  = require('express');
 const path     = require('path');
 const { parseCommand }          = require('./parser');
+const { interpretMessage }      = require('./nlp');
+const { isOwnerQuery, handleOwnerQuery } = require('./ownerQuery');
 const { sendWhatsAppMessage, extractInboundMessage } = require('./whatsapp');
 const { handleFeed }     = require('./handlers/feed');
 const { handleMortality } = require('./handlers/mortality');
@@ -32,7 +34,73 @@ const HELP_TEXT = `🐟 *Fish Farm Bot — Commands*
 
 *stock* — Check feed inventory
 *ponds* — Check all pond status
-*help* — Show this message`;
+*help* — Show this message
+
+Or just describe what happened in plain language and I'll figure it out!`;
+
+const UNKNOWN_REPLY = `I couldn't understand that message. Here's what I can help with:
+
+🐟 *Log feeding:* 'I fed A1 50kg'
+💀 *Log deaths:* '3 fish died in B2'
+🔢 *Update count:* 'counted 480 in A1'
+🎣 *Log harvest:* 'harvested A1, 200kg, 45 cedis'
+📦 *Check feed stock:* 'how much feed is left'
+🏊 *Check ponds:* 'show all ponds'
+
+Or just describe what happened and I'll figure it out!`;
+
+// In-memory store for incomplete commands awaiting follow-up
+// { phone -> { original: string, missing: string } }
+const pendingCommands = new Map();
+
+// Convert NLP JSON output → { command, args } shape that handlers expect
+function normalizeNlpResult(nlp) {
+  switch (nlp.command) {
+    case 'feed':
+      return { command: 'feed', args: { pondName: nlp.pond, kg: nlp.kg } };
+    case 'dead':
+      return { command: 'mortality', args: { pondName: nlp.pond, count: nlp.count } };
+    case 'count':
+      return { command: 'count', args: { pondName: nlp.pond, count: nlp.count } };
+    case 'harvest':
+      return {
+        command: 'harvest',
+        args: {
+          pondName:   nlp.pond,
+          weightKg:   nlp.weight_kg,
+          fishCount:  nlp.fish_count,
+          buyer:      nlp.buyer,
+          pricePerKg: nlp.price_per_kg,
+        },
+      };
+    case 'stock': return { command: 'stock', args: {} };
+    case 'ponds': return { command: 'ponds', args: {} };
+    case 'help':  return { command: 'help',  args: {} };
+    default:      return null;
+  }
+}
+
+async function routeCommand(parsed, from) {
+  switch (parsed.command) {
+    case 'feed':      return handleFeed(parsed.args, from);
+    case 'mortality': return handleMortality(parsed.args, from);
+    case 'count':     return handleCount(parsed.args, from);
+    case 'harvest':   return handleHarvest(parsed.args, from);
+    case 'stock':     return handleStock();
+    case 'ponds':     return handlePonds();
+    case 'help':      return HELP_TEXT;
+    case 'addpond':
+    case 'addfeed':
+      if (from !== process.env.OWNER_PHONE) {
+        return 'This command is only available to the farm owner.';
+      }
+      return parsed.command === 'addpond'
+        ? handleAddPond(parsed.args)
+        : handleAddFeed(parsed.args);
+    default:
+      return UNKNOWN_REPLY;
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -84,34 +152,57 @@ app.post('/webhook', async (req, res) => {
   let reply;
 
   try {
-    const parsed = parseCommand(body);
+    // ── 1. Complete a pending incomplete command ──────────────────────────────
+    if (pendingCommands.has(from)) {
+      const { original, missing } = pendingCommands.get(from);
+      pendingCommands.delete(from);
 
-    if (parsed.error === 'unknown_command') {
-      reply = "I didn't understand that. Send *help* to see available commands.";
-    } else if (parsed.error === 'invalid_args') {
-      reply = "Invalid command format. Send *help* to see usage examples.";
+      const combined = `${original}. The ${missing} is: ${body.trim()}`;
+      console.log('[Webhook] Completing pending command:', combined);
+      const nlp = await interpretMessage(combined);
+
+      if (nlp.command === 'incomplete' || nlp.command === 'unknown') {
+        reply = UNKNOWN_REPLY;
+      } else {
+        const parsed = normalizeNlpResult(nlp);
+        reply = parsed ? await routeCommand(parsed, from) : UNKNOWN_REPLY;
+      }
+
+      await sendWhatsAppMessage(from, reply);
+      return;
+    }
+
+    // ── 2. Try strict parser ──────────────────────────────────────────────────
+    const strict = parseCommand(body);
+
+    if (!strict.error) {
+      // Exact match — use it directly, no API call needed
+      reply = await routeCommand(strict, from);
+
+    } else if (from === process.env.OWNER_PHONE && isOwnerQuery(body)) {
+      // ── 3. Owner asking a question — data-driven Claude answer ───────────
+      console.log('[Webhook] Owner query detected:', body);
+      reply = await handleOwnerQuery(body);
+
     } else {
-      switch (parsed.command) {
-        case 'feed':      reply = await handleFeed(parsed.args, from);      break;
-        case 'mortality': reply = await handleMortality(parsed.args, from); break;
-        case 'count':     reply = await handleCount(parsed.args, from);     break;
-        case 'harvest':   reply = await handleHarvest(parsed.args, from);   break;
-        case 'stock':     reply = await handleStock();                       break;
-        case 'ponds':     reply = await handlePonds();                       break;
-        case 'addpond':
-        case 'addfeed':
-          if (from !== process.env.OWNER_PHONE) {
-            reply = 'This command is only available to the farm owner.';
-            break;
-          }
-          reply = parsed.command === 'addpond'
-            ? await handleAddPond(parsed.args)
-            : await handleAddFeed(parsed.args);
-          break;
-        case 'help':      reply = HELP_TEXT;                                 break;
-        default:          reply = "I didn't understand that. Send *help* to see available commands.";
+      // ── 4. Fall back to NLP interpretation ───────────────────────────────
+      const nlp = await interpretMessage(body);
+
+      if (nlp.command === 'incomplete') {
+        // Store state and prompt for the missing field
+        pendingCommands.set(from, { original: nlp.original || body, missing: nlp.missing });
+        const fieldLabel = nlp.missing === 'kg' ? 'kg of feed' : nlp.missing;
+        reply = `Almost there! How many ${fieldLabel} did you use? Reply with just the number, e.g. *50*`;
+
+      } else if (nlp.command === 'unknown') {
+        reply = UNKNOWN_REPLY;
+
+      } else {
+        const parsed = normalizeNlpResult(nlp);
+        reply = parsed ? await routeCommand(parsed, from) : UNKNOWN_REPLY;
       }
     }
+
   } catch (err) {
     console.error(`[Webhook] Error handling message from ${from}:`, err.message);
     reply = 'Something went wrong on our end. Please try again in a moment.';
