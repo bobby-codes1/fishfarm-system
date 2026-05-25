@@ -210,7 +210,22 @@ app.post('/webhook', async (req, res) => {
       // ── 4. Fall back to NLP interpretation ───────────────────────────────
       const nlp = await interpretMessage(body);
 
-      if (nlp.command === 'incomplete') {
+      if (nlp.batch && Array.isArray(nlp.batch)) {
+        // Multiple pond operations in one message
+        const results = [];
+        for (const cmd of nlp.batch) {
+          const parsed = normalizeNlpResult(cmd);
+          if (parsed) {
+            try {
+              results.push(await routeCommand(parsed, from));
+            } catch (e) {
+              results.push(`⚠️ Could not process ${cmd.command} for ${cmd.pond}: ${e.message}`);
+            }
+          }
+        }
+        reply = results.length ? results.join('\n\n') : UNKNOWN_REPLY;
+
+      } else if (nlp.command === 'incomplete') {
         // Store state and prompt for the missing field
         pendingCommands.set(from, { original: nlp.original || body, missing: nlp.missing });
         const fieldLabel = nlp.missing === 'kg' ? 'kg of feed' : nlp.missing;

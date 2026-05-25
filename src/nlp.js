@@ -108,6 +108,21 @@ Response: {"command":"addfeed","feed_type":"Coppens","quantity_kg":200,"cost_per
 Message: "Restock local feed, 100kg, 30 cedis"
 Response: {"command":"addfeed","feed_type":"local","quantity_kg":100,"cost_per_kg":30}
 
+When a message describes operations on multiple ponds, return a batch object instead of a single command:
+{"batch":[...array of individual command objects...]}
+
+Message: "fed A1 50kg and B1 30kg"
+Response: {"batch":[{"command":"feed","pond":"A1","kg":50},{"command":"feed","pond":"B1","kg":30}]}
+
+Message: "3 fish died in A1, 2 in A2"
+Response: {"batch":[{"command":"dead","pond":"A1","count":3},{"command":"dead","pond":"A2","count":2}]}
+
+Message: "feed A1 40kg, A2 35kg and B2 25kg"
+Response: {"batch":[{"command":"feed","pond":"A1","kg":40},{"command":"feed","pond":"A2","kg":35},{"command":"feed","pond":"B2","kg":25}]}
+
+Message: "A1 got 50kg feed, B2 had 4 deaths"
+Response: {"batch":[{"command":"feed","pond":"A1","kg":50},{"command":"dead","pond":"B2","count":4}]}
+
 Always extract pond codes regardless of how they are written (A1, a1, pond A1, pond a1 all mean the same thing). Uppercase the pond code in the response.
 Amounts can be written as numbers or words — convert to numbers.
 If critical data is missing (e.g. feed command with no kg amount, or dead command with no count), return {"command":"incomplete","missing":"[field]","original":"[exact original message]"}`;
