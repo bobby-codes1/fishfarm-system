@@ -57,12 +57,19 @@ const pendingCommands = new Map();
 function normalizeNlpResult(nlp) {
   switch (nlp.command) {
     case 'feed':
+    case 'feeding':
       return { command: 'feed', args: { pondName: nlp.pond, kg: nlp.kg } };
     case 'dead':
+    case 'death':
+    case 'deaths':
+    case 'mortality':
       return { command: 'mortality', args: { pondName: nlp.pond, count: nlp.count } };
     case 'count':
+    case 'counting':
+    case 'fish':
       return { command: 'count', args: { pondName: nlp.pond, count: nlp.count } };
     case 'harvest':
+    case 'harvested':
       return {
         command: 'harvest',
         args: {
@@ -73,10 +80,16 @@ function normalizeNlpResult(nlp) {
           pricePerKg: nlp.price_per_kg,
         },
       };
-    case 'stock': return { command: 'stock', args: {} };
-    case 'ponds': return { command: 'ponds', args: {} };
+    case 'stock':
+    case 'inventory':
+      return { command: 'stock', args: {} };
+    case 'ponds':
+    case 'status':
+      return { command: 'ponds', args: {} };
     case 'help':  return { command: 'help',  args: {} };
-    default:      return null;
+    default:
+      console.log('[NLP] Unrecognised command from model:', nlp.command);
+      return null;
   }
 }
 

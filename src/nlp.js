@@ -70,9 +70,42 @@ Response: {"command":"feed","pond":"B2","kg":35}
 Message: "3 of the fish no dey move for A1"
 Response: {"command":"dead","pond":"A1","count":3}
 
+Message: "What can you help me with?"
+Response: {"command":"help"}
+
+Message: "help me"
+Response: {"command":"help"}
+
+Message: "what can you do"
+Response: {"command":"help"}
+
+Message: "updates"
+Response: {"command":"ponds"}
+
+Message: "updates?"
+Response: {"command":"ponds"}
+
+Message: "any updates"
+Response: {"command":"ponds"}
+
+Message: "how are the ponds"
+Response: {"command":"ponds"}
+
 Always extract pond codes regardless of how they are written (A1, a1, pond A1, pond a1 all mean the same thing). Uppercase the pond code in the response.
 Amounts can be written as numbers or words — convert to numbers.
 If critical data is missing (e.g. feed command with no kg amount, or dead command with no count), return {"command":"incomplete","missing":"[field]","original":"[exact original message]"}`;
+
+function extractJson(text) {
+  // Direct parse first
+  try { return JSON.parse(text); } catch {}
+  // Strip markdown code fences e.g. ```json ... ```
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) { try { return JSON.parse(fence[1].trim()); } catch {} }
+  // Pull out the first {...} block from any surrounding text
+  const obj = text.match(/(\{[\s\S]*?\})/);
+  if (obj) { try { return JSON.parse(obj[1]); } catch {} }
+  return null;
+}
 
 async function interpretMessage(messageText) {
   try {
@@ -83,11 +116,16 @@ async function interpretMessage(messageText) {
       messages: [{ role: 'user', content: messageText }],
     });
 
-    const text = response.content[0].text.trim();
-    console.log(`[NLP] Interpreted: "${messageText}" →`, text);
-    return JSON.parse(text);
+    const raw = response.content[0].text.trim();
+    const result = extractJson(raw);
+    if (!result) {
+      console.error('[NLP] Failed to parse JSON. Raw response:', raw);
+      return { command: 'unknown' };
+    }
+    console.log(`[NLP] Interpreted: "${messageText}" →`, JSON.stringify(result));
+    return result;
   } catch (err) {
-    console.error('[NLP] Error interpreting message:', err.message);
+    console.error('[NLP] API error:', err.message);
     return { command: 'unknown' };
   }
 }
