@@ -86,6 +86,10 @@ function normalizeNlpResult(nlp) {
     case 'ponds':
     case 'status':
       return { command: 'ponds', args: {} };
+    case 'addpond':
+      return { command: 'addpond', args: { name: nlp.name, species: nlp.species, count: nlp.count } };
+    case 'addfeed':
+      return { command: 'addfeed', args: { feedType: nlp.feed_type, quantityKg: nlp.quantity_kg, costPerKg: nlp.cost_per_kg } };
     case 'help':  return { command: 'help',  args: {} };
     default:
       console.log('[NLP] Unrecognised command from model:', nlp.command);
@@ -103,13 +107,18 @@ async function routeCommand(parsed, from) {
     case 'ponds':     return handlePonds();
     case 'help':      return HELP_TEXT;
     case 'addpond':
-    case 'addfeed':
-      if (from !== process.env.OWNER_PHONE) {
-        return 'This command is only available to the farm owner.';
+      if (from !== process.env.OWNER_PHONE) return 'This command is only available to the farm owner.';
+      if (!parsed.args.name || !parsed.args.species || !parsed.args.count) {
+        const n = parsed.args.name || 'X';
+        return `To create pond ${n} I need the species and fish count.\n\nReply with:\n*addpond ${n} catfish 500*\n\nSpecies options: *catfish* or *tilapia*`;
       }
-      return parsed.command === 'addpond'
-        ? handleAddPond(parsed.args)
-        : handleAddFeed(parsed.args);
+      return handleAddPond(parsed.args);
+    case 'addfeed':
+      if (from !== process.env.OWNER_PHONE) return 'This command is only available to the farm owner.';
+      if (!parsed.args.feedType || !parsed.args.quantityKg || !parsed.args.costPerKg) {
+        return `To add feed stock I need the feed type, quantity, and cost.\n\nReply with:\n*addfeed Coppens 200 45*\n(type, kg, GHS per kg)`;
+      }
+      return handleAddFeed(parsed.args);
     default:
       return UNKNOWN_REPLY;
   }

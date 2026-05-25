@@ -20,6 +20,8 @@ Possible commands:
 - harvest: pond was harvested
 - stock: check feed inventory
 - ponds: check pond status
+- addpond: create a new pond (owner only)
+- addfeed: add or restock feed inventory (owner only)
 - help: list commands
 - unknown: cannot interpret
 
@@ -90,6 +92,21 @@ Response: {"command":"ponds"}
 
 Message: "how are the ponds"
 Response: {"command":"ponds"}
+
+Message: "Add pond A2"
+Response: {"command":"addpond","name":"A2"}
+
+Message: "Create pond B2 with 300 catfish"
+Response: {"command":"addpond","name":"B2","species":"catfish","count":300}
+
+Message: "Add a new tilapia pond C1 stocked with 500 fish"
+Response: {"command":"addpond","name":"C1","species":"tilapia","count":500}
+
+Message: "Add 200kg of Coppens feed at 45 cedis per kg"
+Response: {"command":"addfeed","feed_type":"Coppens","quantity_kg":200,"cost_per_kg":45}
+
+Message: "Restock local feed, 100kg, 30 cedis"
+Response: {"command":"addfeed","feed_type":"local","quantity_kg":100,"cost_per_kg":30}
 
 Always extract pond codes regardless of how they are written (A1, a1, pond A1, pond a1 all mean the same thing). Uppercase the pond code in the response.
 Amounts can be written as numbers or words — convert to numbers.
