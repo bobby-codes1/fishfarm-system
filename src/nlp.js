@@ -123,6 +123,18 @@ Response: {"batch":[{"command":"feed","pond":"A1","kg":40},{"command":"feed","po
 Message: "A1 got 50kg feed, B2 had 4 deaths"
 Response: {"batch":[{"command":"feed","pond":"A1","kg":50},{"command":"dead","pond":"B2","count":4}]}
 
+Message: "fed A1, A2, B2 50kg"
+Response: {"batch":[{"command":"feed","pond":"A1","kg":50},{"command":"feed","pond":"A2","kg":50},{"command":"feed","pond":"B2","kg":50}]}
+
+Message: "fed A1, A2 and B2 40kg each"
+Response: {"batch":[{"command":"feed","pond":"A1","kg":40},{"command":"feed","pond":"A2","kg":40},{"command":"feed","pond":"B2","kg":40}]}
+
+Message: "fed A1, A2, B2"
+Response: {"command":"incomplete","missing":"kg","original":"fed A1, A2, B2"}
+
+Message: "dead fish in A1, A2 and B1 — 3 each"
+Response: {"batch":[{"command":"dead","pond":"A1","count":3},{"command":"dead","pond":"A2","count":3},{"command":"dead","pond":"B1","count":3}]}
+
 Always extract pond codes regardless of how they are written (A1, a1, pond A1, pond a1 all mean the same thing). Uppercase the pond code in the response.
 Amounts can be written as numbers or words — convert to numbers.
 If critical data is missing (e.g. feed command with no kg amount, or dead command with no count), return {"command":"incomplete","missing":"[field]","original":"[exact original message]"}`;
